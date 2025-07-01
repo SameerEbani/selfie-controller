@@ -10,7 +10,7 @@
       font-family: sans-serif;
       text-align: center;
       background: linear-gradient(135deg, #e0424f, #e0aa13);
-      padding: 20px;
+      padding: 5px;
       overflow: hidden;
       min-height: 100vh;
     }
@@ -103,7 +103,7 @@
     }
 
     #successMessage {
-        display: none;
+  display: none;
   margin-top: 20px;
   background: linear-gradient(135deg, #28a745, #218838);
   color: white;
@@ -254,6 +254,8 @@
       retakeBtn.style.display = 'inline-block';
       toggleFramesBtn.style.display = 'inline-block';
       submitBtn.style.display = 'none';
+      
+       document.getElementById("instructions").style.display = "none";
     });
 
     toggleFramesBtn.addEventListener("click", () => {
