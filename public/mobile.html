@@ -39,19 +39,21 @@
       z-index: 2;
     }
 
-    .filter-btn {
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-    }
+ .filter-btn-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover; /* ensures images fit the box */
+  margin: 5px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
 
-    .filter-btn[data-frame="none"] { background: #999; color: white; }
-    .filter-btn[data-frame="blue"] { background: #00f; color: white; }
-    .filter-btn[data-frame="red"] { background: #f00; color: white; }
-    .filter-btn[data-frame="yellow"] { background: #ff0; color: black; }
+    .filter-btn-img:hover {
+      transform: scale(1.05);
+      border-color: #333;
+    }
 
     button {
       margin: 10px 10px 0 10px;
@@ -74,10 +76,28 @@
   <button id="captureBtn">Capture</button>
 
   <div id="frameButtons" style="display: none;">
-  
-    <button class="filter-btn" data-frame="blue">Blue Frame</button>
-    <button class="filter-btn" data-frame="red">Red Frame</button>
-    <button class="filter-btn" data-frame="yellow">Yellow Frame</button>
+    <!-- Static frames -->
+    <img class="filter-btn-img" data-frame="blue" src="/blue.png" alt="Blue Frame" width="80" />
+    <img class="filter-btn-img" data-frame="red" src="/red.png" alt="Red Frame" width="80" />
+    <img class="filter-btn-img" data-frame="yellow" src="/yellow.png" alt="Yellow Frame" width="80" />
+    
+    <!-- Dynamic frames 1–15 -->
+    <!-- You can use a loop server-side to generate this if needed -->
+    <img class="filter-btn-img" data-frame="1" src="/1.png" alt="1 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="2" src="/2.png" alt="2 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="3" src="/3.png" alt="3 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="4" src="/4.png" alt="4 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="5" src="/5.png" alt="5 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="6" src="/6.png" alt="6 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="7" src="/7.png" alt="7 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="8" src="/8.png" alt="8 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="9" src="/9.png" alt="9 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="10" src="/10.png" alt="10 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="11" src="/11.png" alt="11 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="12" src="/12.png" alt="12 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="13" src="/13.png" alt="13 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="14" src="/14.png" alt="14 Frame" width="80" />
+    <img class="filter-btn-img" data-frame="15" src="/15.png" alt="15 Frame" width="80" />
   </div>
 
   <button id="retakeBtn" style="display: none;">Retake</button>
@@ -96,12 +116,6 @@
     let selectedFrame = "none";
     let capturedImage;
 
-    const frameImages = {
-      yellow: "/yellow.png",
-      blue: "/blue.png",
-      red: "/red.png",
-    };
-
     const pathParts = window.location.pathname.split('/');
     const desktopId = pathParts[pathParts.length - 1];
 
@@ -117,7 +131,7 @@
       alert("❌ Desktop disconnected. Refresh the page.");
     });
 
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    document.querySelectorAll('.filter-btn-img').forEach(btn => {
       btn.addEventListener('click', async () => {
         selectedFrame = btn.dataset.frame;
 
@@ -125,14 +139,21 @@
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(capturedImage, 0, 0, canvas.width, canvas.height);
 
-        if (selectedFrame !== "none") {
-          const frame = new Image();
-          frame.src = frameImages[selectedFrame];
+        const frame = new Image();
+
+        // Dynamic image logic
+        if (["blue", "red", "yellow"].includes(selectedFrame)) {
+          frame.src = `/${selectedFrame}.png`;
+        } else {
+          frame.src = `/${selectedFrame}.png`;
+        }
+
+        try {
           await frame.decode();
           context.drawImage(frame, 0, 0, canvas.width, canvas.height);
           submitBtn.style.display = 'inline-block';
-        } else {
-          submitBtn.style.display = 'none';
+        } catch (e) {
+          alert("Error loading frame image.");
         }
       });
     });
@@ -156,13 +177,11 @@
 
       capturedImage = new Image();
       capturedImage.src = canvas.toDataURL();
-      capturedImage.onload = () => {};
 
       video.style.display = 'none';
       canvas.style.display = 'block';
       captureBtn.style.display = 'none';
       retakeBtn.style.display = 'inline-block';
-
       frameButtons.style.display = 'block';
       submitBtn.style.display = 'none';
     });
@@ -170,7 +189,6 @@
     retakeBtn.addEventListener("click", () => {
       canvas.style.display = 'none';
       video.style.display = 'block';
-
       captureBtn.style.display = 'inline-block';
       retakeBtn.style.display = 'none';
       submitBtn.style.display = 'none';
