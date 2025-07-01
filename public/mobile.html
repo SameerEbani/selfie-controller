@@ -9,9 +9,13 @@
     body {
       font-family: sans-serif;
       text-align: center;
-      background: #f0f0f0;
+      background: linear-gradient(135deg, #e0424f, #e0aa13);
       padding: 20px;
+      overflow: hidden;
+      min-height: 100vh;
     }
+
+ 
 
     .video-wrapper {
       position: relative;
@@ -39,32 +43,94 @@
       z-index: 2;
     }
 
- .filter-btn-img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover; /* ensures images fit the box */
-  margin: 5px;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
-}
+    .filter-btn-img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin: 5px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
 
     .filter-btn-img:hover {
       transform: scale(1.05);
       border-color: #333;
     }
 
+    .filter-btn-img.selected {
+      border: 3px solid #ffcc00;
+      transform: scale(1.1);
+    }
+
+    .frame-scroll {
+      display: flex;
+      overflow-x: auto;
+      padding: 10px;
+      margin-top: 15px;
+      scroll-snap-type: x mandatory;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .frame-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .frame-scroll::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 10px;
+    }
+
     button {
       margin: 10px 10px 0 10px;
       padding: 10px 20px;
       font-size: 16px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      background-color: #e04040;
+      color: #fff;
+      transition: background-color 0.2s;
     }
+
+    button:hover {
+      background-color: #da4949;
+    }
+
+    #successMessage {
+        display: none;
+  margin-top: 20px;
+  background: linear-gradient(135deg, #28a745, #218838);
+  color: white;
+  font-size: 18px;
+  padding: 15px 20px;
+  border-radius: 10px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: fadeIn 0.4s ease-in-out;
+    }
+    
   </style>
 </head>
 <body>
 
-  <h2>Mobile Camera Control</h2>
+  <div id="instructions" style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; color: #fff; max-width: 400px; margin: auto; margin-bottom: 10px;">
+  <h3 style="margin-top: 0;">📸 Instructions</h3>
+  <ol style="text-align: left; padding-left: 20px;">
+    <li>Allow camera access when prompted.</li>
+    <li>Click <strong>Capture</strong> to take a photo.</li>
+    <li>Click <strong>Choose Frame</strong> to pick a style.</li>
+    <li>Click <strong>Submit</strong> to send your selfie.</li>
+  </ol>
+</div>
+
 
   <div class="video-wrapper">
     <video id="video" autoplay playsinline></video>
@@ -74,34 +140,41 @@
   <canvas id="canvas"></canvas><br/>
 
   <button id="captureBtn">Capture</button>
-
-  <div id="frameButtons" style="display: none;">
-    <!-- Static frames -->
-    <img class="filter-btn-img" data-frame="blue" src="/blue.png" alt="Blue Frame" width="80" />
-    <img class="filter-btn-img" data-frame="red" src="/red.png" alt="Red Frame" width="80" />
-    <img class="filter-btn-img" data-frame="yellow" src="/yellow.png" alt="Yellow Frame" width="80" />
-    
-    <!-- Dynamic frames 1–15 -->
-    <!-- You can use a loop server-side to generate this if needed -->
-    <img class="filter-btn-img" data-frame="1" src="/1.png" alt="1 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="2" src="/2.png" alt="2 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="3" src="/3.png" alt="3 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="4" src="/4.png" alt="4 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="5" src="/5.png" alt="5 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="6" src="/6.png" alt="6 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="7" src="/7.png" alt="7 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="8" src="/8.png" alt="8 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="9" src="/9.png" alt="9 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="10" src="/10.png" alt="10 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="11" src="/11.png" alt="11 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="12" src="/12.png" alt="12 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="13" src="/13.png" alt="13 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="14" src="/14.png" alt="14 Frame" width="80" />
-    <img class="filter-btn-img" data-frame="15" src="/15.png" alt="15 Frame" width="80" />
-  </div>
-
+  <button id="toggleFramesBtn" style="display: none;">Choose Frame</button>
   <button id="retakeBtn" style="display: none;">Retake</button>
   <button id="submitBtn" style="display: none;">Submit</button>
+
+  <div id="frameButtons" class="frame-scroll" style="display: none;">
+    <!-- Static frames -->
+    <img class="filter-btn-img" data-frame="blue" src="/blue.png" alt="Blue Frame" />
+    <img class="filter-btn-img" data-frame="red" src="/red.png" alt="Red Frame" />
+    <img class="filter-btn-img" data-frame="yellow" src="/yellow.png" alt="Yellow Frame" />
+
+    <!-- Dynamic frames 1–15 -->
+    <!-- You can generate this with a loop in a templating engine -->
+    <img class="filter-btn-img" data-frame="1" src="/1.png" alt="1 Frame" />
+    <img class="filter-btn-img" data-frame="2" src="/2.png" alt="2 Frame" />
+    <img class="filter-btn-img" data-frame="3" src="/3.png" alt="3 Frame" />
+    <img class="filter-btn-img" data-frame="4" src="/4.png" alt="4 Frame" />
+    <img class="filter-btn-img" data-frame="5" src="/5.png" alt="5 Frame" />
+    <img class="filter-btn-img" data-frame="6" src="/6.png" alt="6 Frame" />
+    <img class="filter-btn-img" data-frame="7" src="/7.png" alt="7 Frame" />
+    <img class="filter-btn-img" data-frame="8" src="/8.png" alt="8 Frame" />
+    <img class="filter-btn-img" data-frame="9" src="/9.png" alt="9 Frame" />
+    <img class="filter-btn-img" data-frame="10" src="/10.png" alt="10 Frame" />
+    <img class="filter-btn-img" data-frame="11" src="/11.png" alt="11 Frame" />
+    <img class="filter-btn-img" data-frame="12" src="/12.png" alt="12 Frame" />
+    <img class="filter-btn-img" data-frame="13" src="/13.png" alt="13 Frame" />
+    <img class="filter-btn-img" data-frame="14" src="/14.png" alt="14 Frame" />
+    <img class="filter-btn-img" data-frame="15" src="/15.png" alt="15 Frame" />
+  </div>
+
+<div id="successMessage">
+   <strong>Success!</strong> Your selfie has been submitted.<br>
+   <em>Check your image on the screen.</em>
+</div>
+
+
 
   <script>
     const socket = io();
@@ -111,6 +184,7 @@
     const captureBtn = document.getElementById('captureBtn');
     const retakeBtn = document.getElementById('retakeBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const toggleFramesBtn = document.getElementById('toggleFramesBtn');
     const frameButtons = document.getElementById('frameButtons');
 
     let selectedFrame = "none";
@@ -124,15 +198,17 @@
     });
 
     socket.on("paired", () => {
-      alert("✅ Connected to desktop!");
+      
     });
 
     socket.on("hostDisconnected", () => {
-      alert("❌ Desktop disconnected. Refresh the page.");
+      alert("❌ Screen disconnected. Refresh the page.");
     });
 
     document.querySelectorAll('.filter-btn-img').forEach(btn => {
       btn.addEventListener('click', async () => {
+        document.querySelectorAll('.filter-btn-img').forEach(img => img.classList.remove('selected'));
+        btn.classList.add('selected');
         selectedFrame = btn.dataset.frame;
 
         const context = canvas.getContext('2d');
@@ -140,13 +216,7 @@
         context.drawImage(capturedImage, 0, 0, canvas.width, canvas.height);
 
         const frame = new Image();
-
-        // Dynamic image logic
-        if (["blue", "red", "yellow"].includes(selectedFrame)) {
-          frame.src = `/${selectedFrame}.png`;
-        } else {
-          frame.src = `/${selectedFrame}.png`;
-        }
+        frame.src = `/${selectedFrame}.png`;
 
         try {
           await frame.decode();
@@ -182,8 +252,12 @@
       canvas.style.display = 'block';
       captureBtn.style.display = 'none';
       retakeBtn.style.display = 'inline-block';
-      frameButtons.style.display = 'block';
+      toggleFramesBtn.style.display = 'inline-block';
       submitBtn.style.display = 'none';
+    });
+
+    toggleFramesBtn.addEventListener("click", () => {
+      frameButtons.style.display = frameButtons.style.display === 'none' ? 'flex' : 'none';
     });
 
     retakeBtn.addEventListener("click", () => {
@@ -191,8 +265,9 @@
       video.style.display = 'block';
       captureBtn.style.display = 'inline-block';
       retakeBtn.style.display = 'none';
-      submitBtn.style.display = 'none';
+      toggleFramesBtn.style.display = 'none';
       frameButtons.style.display = 'none';
+      submitBtn.style.display = 'none';
     });
 
     submitBtn.addEventListener("click", () => {
@@ -211,7 +286,11 @@
 
       retakeBtn.style.display = 'none';
       submitBtn.style.display = 'none';
+      toggleFramesBtn.style.display = 'none';
       frameButtons.style.display = 'none';
+
+      document.getElementById("successMessage").style.display = "block";
+
     });
 
     initCamera();
